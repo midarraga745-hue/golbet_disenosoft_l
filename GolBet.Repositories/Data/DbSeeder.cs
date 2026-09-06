@@ -1,6 +1,7 @@
-﻿// GolBet.Repositories/Data/DbSeeder.cs
+﻿// GolBet.Repositories / Data / DbSeeder.cs
 using GolBet.Entities;
 using GolBet.Entities.Enums;
+using GolBet.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GolBet.Repositories.Data;
@@ -17,7 +18,12 @@ public static class DbSeeder
         // ---- Teams ----
         var teams = new List<Team>
         {
-            new() { Name = "Atlético Nacional",       City = "Medellín",     CrestUrl = "https://placehold.co/80x80/006633/ffffff?text=NAC" },
+            new() {
+                Name = "Atlético Nacional",
+                City = "Medellín",
+                CrestUrl = "https://placehold.co/80x80/006633/ffffff?text=NAC"
+                //CrestUrl = "https://upload.wikimedia.org/wikipedia/commons/a/ae/Atletico_Nacional_Logo.svg?utm_source=es.wikipedia.org&utm_campaign=index&utm_content=original"
+            },
             new() { Name = "Independiente Medellín",  City = "Medellín",     CrestUrl = "https://placehold.co/80x80/cc0000/ffffff?text=DIM" },
             new() { Name = "Millonarios",             City = "Bogotá",       CrestUrl = "https://placehold.co/80x80/003399/ffffff?text=MIL" },
             new() { Name = "Independiente Santa Fe",  City = "Bogotá",       CrestUrl = "https://placehold.co/80x80/cc0000/ffffff?text=SFE" },
@@ -41,7 +47,9 @@ public static class DbSeeder
                 HomeTeamId = teams[0].Id, AwayTeamId = teams[1].Id,    // clásico paisa
                 Date = today.AddDays(3).AddHours(20),
                 Status = MatchStatus.Scheduled,
-                HomeOdds = 2.10m, DrawOdds = 3.20m, AwayOdds = 3.60m
+                HomeOdds = 2.10m,
+                DrawOdds = 3.20m,
+                AwayOdds = 3.60m
             },
             new()
             {
