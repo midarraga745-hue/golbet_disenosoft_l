@@ -1,4 +1,4 @@
-﻿﻿@* GolBet.Web/Views/Matches/Index.cshtml *@
+﻿@* GolBet.Web/Views/Matches/Index.cshtml *@
 @using GolBet.Entities.Enums
 @using GolBet.Web.Helpers
 @model IEnumerable<GolBet.Services.DTOs.MatchDto>
@@ -8,22 +8,33 @@
 
 @{
     var current = (MatchStatus?)ViewBag.CurrentStatus;
+    var currentSearch = (string?)ViewBag.CurrentSearch;
 }
 
+<form asp-action="Index" method="get" class="d-flex gap-2 mb-3">
+    <input type="text" name="search" value="@currentSearch"
+           class="form-control" placeholder="Buscar por equipo..." />
+    @if (current.HasValue)
+    {
+        <input type="hidden" name="status" value="@current" />
+    }
+    <button type="submit" class="btn btn-success">Buscar</button>
+</form>
+
 <div class="d-flex gap-2 flex-wrap mb-4">
-    <a asp-action="Index"
+    <a asp-action="Index" asp-route-search="@currentSearch"
        class="btn btn-sm @(current is null ? "btn-success" : "btn-outline-success")">
         Todos
     </a>
-    <a asp-action="Index" asp-route-status="@MatchStatus.Scheduled"
+    <a asp-action="Index" asp-route-status="@MatchStatus.Scheduled" asp-route-search="@currentSearch"
        class="btn btn-sm @(current == MatchStatus.Scheduled ? "btn-success" : "btn-outline-success")">
         Programados
     </a>
-    <a asp-action="Index" asp-route-status="@MatchStatus.InProgress"
+    <a asp-action="Index" asp-route-status="@MatchStatus.InProgress" asp-route-search="@currentSearch"
        class="btn btn-sm @(current == MatchStatus.InProgress ? "btn-success" : "btn-outline-success")">
         En juego
     </a>
-    <a asp-action="Index" asp-route-status="@MatchStatus.Finished"
+    <a asp-action="Index" asp-route-status="@MatchStatus.Finished" asp-route-search="@currentSearch"
        class="btn btn-sm @(current == MatchStatus.Finished ? "btn-success" : "btn-outline-success")">
         Finalizados
     </a>
@@ -33,9 +44,26 @@
     <h2>⚽ Cartelera de partidos</h2>
     @if (User.IsInRole("Admin"))
     {
-         <a asp-action="Create" class="btn btn-success">+ Nuevo partido</a>
+        <a asp-action="Create" class="btn btn-success">+ Nuevo partido</a>
     }
 </div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <h1 class="display-1">🔍</h1>
+        @if (!string.IsNullOrWhiteSpace(currentSearch))
+        {
+            <h3>No hay partidos para “@currentSearch”</h3>
+        }
+        else
+        {
+            <h3>No hay partidos para mostrar</h3>
+        }
+        <p class="text-muted">Intenta con otro nombre de equipo o cambia el filtro.</p>
+        <a asp-action="Index" class="btn btn-success">Volver a la cartelera de partidos</a>
+    </div>
+}
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
     @foreach (var match in Model)
