@@ -16,11 +16,11 @@ public class MatchRepository : GenericRepository<Match>, IMatchRepository
     public async Task<IEnumerable<Match>> GetAllWithTeamsAsync(MatchStatus? status = null, string? search = null)
     {
         var query = _dbSet
-            .Include(m => m.HomeTeam) //El include viene siendo un JOIN en SQL
+            .Include(m => m.HomeTeam) // The include is like a JOIN in SQL, preparing in to retrievr Team information
             .Include(m => m.AwayTeam)
             .Where(m => m.IsActive)
             .AsNoTracking()
-            .AsQueryable(); //El asQueryable es para poder aplicar filtros dinamicos, ya que el Include devuelve un IQueryable y no un Enumerable
+            .AsQueryable(); //The asQueryable es para poder aplicar filtros dinamicos, ya que el Include devuelve un IQueryable y no un Enumerable
 
         if (status.HasValue)
             query = query.Where(m => m.Status == status.Value);
