@@ -14,7 +14,7 @@
                 @if (!User.IsInRole("Admin"))
                 {
                     <span class="badge bg-warning text-dark ms-1">
-                        @appUser.Balance.ToString("N0") FutCoins
+                        @appUser.Balance.ToString("C0") FutCoins
                     </span>
                 }
             </span>
