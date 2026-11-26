@@ -7,21 +7,25 @@ using GolBet.Services.Interfaces;
 using GolBet.Services.Mapping;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Globalization;
 
 var culture = new CultureInfo("es-CO");
-// Dates in Spanish, numbers neutral so model binding reads "2.5" correctly
+// Dates in Spanish; numbers neutral so model binding reads "2.5" correctly
 culture.NumberFormat = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
-culture.NumberFormat.NumberGroupSeparator = "";
+culture.NumberFormat.NumberGroupSeparator = "";   // "2,5" fails loudly, never binds as 25
 
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog replaces the default logger, reading the "Serilog" section of appsettings.json
+builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-//Este es el nuevo código
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -38,7 +42,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Account/Login";           // anonymous hitting [Authorize]
+    options.LoginPath = "/Account/Login";                // anonymous hitting [Authorize]
     options.AccessDeniedPath = "/Account/AccessDenied";  // wrong role
 });
 
@@ -59,29 +63,34 @@ builder.Services.AddScoped<IBetService, BetService>();
 
 var app = builder.Build();
 
+// Unhandled exceptions (500): friendly page in production,
+// full yellow stack trace while developing
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error/General");
+}
+
+// Status codes without a body (404 and friends): re-execute
+// the pipeline against our ErrorController
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
 // Seed the database on startup
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
     await DbSeeder.SeedAsync(context, roleManager, userManager);
-}
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseSerilogRequestLogging();   // one clean line per request
 app.UseRouting();
 
-app.UseAuthentication(); // who are you? (reads the cookie, builds User)
-app.UseAuthorization(); // may you do this? (evaluates [Authorize])
+app.UseAuthentication();   // who are you?
+app.UseAuthorization();    // may you do this?
 
 app.MapControllerRoute(
     name: "default",

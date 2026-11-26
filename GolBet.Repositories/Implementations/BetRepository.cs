@@ -14,8 +14,7 @@ public class BetRepository : GenericRepository<Bet>, IBetRepository
     }
 
     public async Task<bool> ExistsAsync(int matchId, string userId, BetPick pick)
-        => await _dbSet.AnyAsync(b =>
-               b.MatchId == matchId && b.UserId == userId && b.Pick == pick);
+        => await _dbSet.AnyAsync(b => b.MatchId == matchId && b.UserId == userId && b.Pick == pick);
 
     public async Task<IEnumerable<Bet>> GetByUserAsync(string userId)
         => await _dbSet

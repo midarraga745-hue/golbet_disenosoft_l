@@ -6,6 +6,7 @@ using GolBet.Repositories.Interfaces;
 using GolBet.Services.DTOs;
 using GolBet.Services.Helpers;
 using GolBet.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace GolBet.Services.Implementations;
 
@@ -14,15 +15,18 @@ public class MatchService : IMatchService
     private readonly IMatchRepository _matchRepository;
     private readonly IBetRepository _betRepository;
     private readonly IMapper _mapper;
+    private readonly ILogger<MatchService> _logger;
 
     public MatchService(
         IMatchRepository matchRepository,
         IBetRepository betRepository,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<MatchService> logger)
     {
         _matchRepository = matchRepository;
         _betRepository = betRepository;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<MatchDto>> GetBoardAsync(MatchStatus? status = null, string? search = null)
@@ -34,10 +38,9 @@ public class MatchService : IMatchService
     public async Task<MatchDetailDto?> GetDetailAsync(int id)
     {
         var match = await _matchRepository.GetByIdWithDetailsAsync(id);
-        return match is null ? null : _mapper.Map<MatchDetailDto>(match); //If ternario
+        return match is null ? null : _mapper.Map<MatchDetailDto>(match);
     }
 
-    // GolBet.Services/Implementations/MatchService.cs  (agregar)
     public async Task<MatchFormDto?> GetForEditAsync(int id)
     {
         var match = await _matchRepository.GetByIdAsync(id);
@@ -129,6 +132,13 @@ public class MatchService : IMatchService
 
         // 4. ONE save: the match, every bet and every balance, in ONE transaction
         await _matchRepository.UpdateAsync(match);
+
+        // Audit log: only after the transaction succeeded
+        _logger.LogInformation(
+            "Match {MatchId} closed {HomeGoals}-{AwayGoals}: " +
+            "{ResolvedBets} bets resolved, {WonBets} won, {TotalPaid} paid",
+            match.Id, dto.HomeGoals, dto.AwayGoals,
+            summary.ResolvedBets, summary.WonBets, summary.TotalPaid);
 
         return summary;
     }
